@@ -19,8 +19,13 @@
 set -e
 
 pkill -f -- --user-data-dir=$HOME/.messages-tel || true
-rm -f ~/.local/share/applications/chrome-*-messages-tel.desktop
-rm -f ~/.local/share/applications/messages-tel.desktop
+if [ "$(uname)" = "Darwin" ]; then
+    rm -rf ~/Applications/Messages-Tel.app
+else
+    rm -f ~/.local/share/applications/chrome-*-messages-tel.desktop
+    rm -f ~/.local/share/applications/messages-tel.desktop
+fi
+
 rm -rf ~/.messages-tel
 
 echo "Uninstalled."

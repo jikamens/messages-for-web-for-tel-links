@@ -86,8 +86,7 @@ set_up_chrome() {
     touch "$install_dir/chrome/First Run"
 
     if $mac; then
-        echo "macOS support is not yet implemented" 1>&2
-        exit 1
+        chrome_exe="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
     else
         chrome_exe=google-chrome
     fi
@@ -138,8 +137,21 @@ set_up_chrome() {
 }
 
 make_macos_chrome_launcher() {
-    echo "macOS support is not yet implemented" 1>&2
-    exit 1
+    local debug_port="$1"; shift
+    local messages_app
+
+    find ~/Applications/Chrome\ Apps* -name Info.plist -print0 |
+        xargs -0 grep -l messages-tel/chrome |
+        sed 's,/Contents/Info.plist$,,' |
+        while read app; do rm -rf "$app"; done
+
+    local app_id=$(ls "$install_dir/chrome/messages-tel/Web Applications/Manifest Resources")
+    if [ ! "$app_id" ]; then
+        echo "Could not determine application ID for Messages app" 1>&2
+        exit 1
+    fi
+    cmd="\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --remote-debugging-port=$debug_port --user-data-dir=$install_dir/chrome --profile-directory=messages-tel --app-id=$app_id"
+    echo "$cmd"
 }
 
 make_linux_chrome_launcher() {
@@ -179,8 +191,7 @@ get_messages_app() {
     local debug_port="$1"; shift
     local messages_app
     if $mac; then
-        echo "macOS support is not yet implemented" 1>&2
-        exit 1
+        messages_app="$(make_macos_chrome_launcher $debug_port)"
     else
         messages_app="$(make_linux_chrome_launcher $debug_port)"
     fi
@@ -198,8 +209,14 @@ install_scripts() {
 }
 
 install_macos_dialer_app() {
-    echo "macOS support is not yet implemented" 1>&2
-    exit 1
+    local tmp_dir=/tmp/messages-tel.$$
+    mkdir $tmp_dir
+    local app_dir="$tmp_dir/Messages-Tel.app"
+    osacompile -o "$app_dir" "$source_dir/Messages-Tel.applescript"
+    python3 fix-macos-app.py "$app_dir"
+    rm -rf ~/Applications/Messages-Tel.app
+    mv "$app_dir" ~/Applications
+    rmdir "$tmp_dir"
 }
 
 install_linux_dialer_app() {
@@ -224,8 +241,7 @@ EOF
 
 install_dialer_app() {
     if $mac; then
-        echo "macOS support is not yet implemented" 1>&2
-        exit 1
+        install_macos_dialer_app
     else
         install_linux_dialer_app
     fi
@@ -253,8 +269,7 @@ main() {
     read response
     if [ -n "$response" ]; then
         if $mac; then
-            echo "macOS support is not yet implemented" 1>&2
-            exit 1
+            open -a ~/Applications/Messages-Tel.app "tel:$response"
         else
             xdg-open "tel:$response"
         fi

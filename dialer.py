@@ -43,7 +43,8 @@ def get_setting(name):
 
 
 def macos_launch_messages(messages_app):
-    raise Exception('macOS support not yet implemented')
+    subprocess.run(f'{messages_app} &', shell=True, check=True,
+                   stdout=DEVNULL, stderr=DEVNULL)
 
 
 def linux_launch_messages(messages_app):
