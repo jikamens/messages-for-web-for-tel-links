@@ -1,3 +1,5 @@
+XXX chromedriver in path
+
 Using Google Fi Messages for Web for "tel:" links in Chrome on Linux
 ====================================================================
 
@@ -48,6 +50,9 @@ You need to have Google Fi and Chrome.
 
 You need to have python3 and the python selenium modules installed.
 On Ubuntu, `sudo apt install -y python3-selenium` will do the needful.
+
+You need to have `chromedriver` in your search path. On Ubuntu, `sudo
+apt install -y chromium-chromedriver` will do the needful.
 
 Notes and caveats
 -----------------
