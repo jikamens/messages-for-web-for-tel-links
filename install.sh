@@ -46,7 +46,7 @@ check_selenium() {
         exit 1
     fi
 }
-    
+
 get_debug_port() {
     local debug_port="$(get_setting debug_port)"
     if [ -n "$debug_port" ]; then
