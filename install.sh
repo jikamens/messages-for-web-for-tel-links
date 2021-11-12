@@ -64,6 +64,7 @@ get_debug_port() {
 
 set_up_chrome() {
     local debug_port="$1"; shift
+    local response
 
     pkill -f -- --user-data-dir=$install_dir/chrome || true
 
@@ -181,6 +182,7 @@ EOF
 }
 
 main() {
+    local response debug_port messages_app
     if [ -d "$install_dir" ]; then
         echo "It appears you've already at least partially installed this." 1>&2
         echo "Hit Return to overwrite your previous installation," 1>&2
@@ -199,8 +201,8 @@ main() {
     install_scripts
     install_dialer_app
     echo -n "Enter a telephone number to test the installation: "
-    read number
-    xdg-open "tel:$number"
+    read response
+    xdg-open "tel:response"
     echo "If Messages successfully dialed the number, then you're all set!"
 }
 
