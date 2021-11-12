@@ -18,7 +18,15 @@
 
 set -e
 
+source_dir="$(dirname "$0")"
 install_dir=~/.messages-tel
+mac=false
+linux=false
+if [ "$(uname)" = "Darwin" ]; then
+    mac=true
+else
+    linux=true
+fi
 
 get_setting() {
     local name="$1"; shift
@@ -64,7 +72,7 @@ get_debug_port() {
 
 set_up_chrome() {
     local debug_port="$1"; shift
-    local response
+    local chrome_exe response
 
     pkill -f -- --user-data-dir=$install_dir/chrome || true
 
@@ -76,7 +84,15 @@ set_up_chrome() {
 
     mkdir -p "$install_dir/chrome"
     touch "$install_dir/chrome/First Run"
-    google-chrome \
+
+    if $mac; then
+        echo "macOS support is not yet implemented" 1>&2
+        exit 1
+    else
+        chrome_exe=google-chrome
+    fi
+
+    "$chrome_exe" \
         --no-default-browser-check \
         --user-data-dir=$install_dir/chrome \
         --profile-directory=messages-tel \
@@ -108,7 +124,9 @@ set_up_chrome() {
     echo -n "Hit Return when finished: "
     read response
 
-    rm -f ~/Desktop/chrome-*messages-tel.desktop
+    if $linux; then
+        rm -f ~/Desktop/chrome-*messages-tel.desktop
+    fi
 
     echo ""
     echo "The Messages app should have just moved into a separate window,"
@@ -119,18 +137,20 @@ set_up_chrome() {
     read response
 }
 
-get_messages_app() {
-    local messages_app="$(echo ~/.local/share/applications/chrome-*-messages-tel.desktop)"
+make_macos_chrome_launcher() {
+    echo "macOS support is not yet implemented" 1>&2
+    exit 1
+}
+
+make_linux_chrome_launcher() {
+    local debug_port="$1"; shift
+    local messages_app
+    messages_app="$(echo ~/.local/share/applications/chrome-*-messages-tel.desktop)"
     if [ ! -f "$messages_app" ]; then
         echo "Could not find Messages desktop app" 1>&2
         exit 1
     fi
-    echo "$messages_app"
-}
 
-configure_debug_port() {
-    local messages_app="$1"; shift
-    local debug_port="$1"; shift
     local cmd="$(sed -n -e 's/^Exec=//p' "$messages_app")"
     local rdp_arg="--remote-debugging-port=$debug_port "
     if expr "$cmd" : ".*$rdp_arg" >/dev/null; then
@@ -151,17 +171,38 @@ configure_debug_port() {
         exit 1
     fi
     sed -i -e 's|^Exec=.*|Exec='"$newcmd"'|' "$messages_app"
+
+    echo "$messages_app"
+}
+
+get_messages_app() {
+    local debug_port="$1"; shift
+    local messages_app
+    if $mac; then
+        echo "macOS support is not yet implemented" 1>&2
+        exit 1
+    else
+        messages_app="$(make_linux_chrome_launcher $debug_port)"
+    fi
+    if [ ! "$messages_app" ]; then
+        exit 1
+    fi
+    echo "$messages_app"
 }
 
 install_scripts() {
-    sd="$(dirname "$0")"
-    cp "$sd/dialer.py" "$install_dir"
-    cp "$sd/install.sh" "$install_dir"
-    cp "$sd/uninstall.sh" "$install_dir"
+    cp "$source_dir/dialer.py" "$install_dir"
+    cp "$source_dir/install.sh" "$install_dir"
+    cp "$source_dir/uninstall.sh" "$install_dir"
     chmod +x "$install_dir"/*.py "$install_dir"/*.sh
 }
 
-install_dialer_app() {
+install_macos_dialer_app() {
+    echo "macOS support is not yet implemented" 1>&2
+    exit 1
+}
+
+install_linux_dialer_app() {
     td=/tmp/messages-tel.$$
     tf=$td/messages-tel.desktop
     mkdir $td
@@ -181,6 +222,15 @@ EOF
    gio mime x-scheme-handler/tel messages-tel.desktop
 }
 
+install_dialer_app() {
+    if $mac; then
+        echo "macOS support is not yet implemented" 1>&2
+        exit 1
+    else
+        install_linux_dialer_app
+    fi
+}
+
 main() {
     local response debug_port messages_app
     if [ -d "$install_dir" ]; then
@@ -195,15 +245,23 @@ main() {
     debug_port=$(get_debug_port)
     save_setting debug_port "$debug_port"
     set_up_chrome "$debug_port"
-    messages_app=$(get_messages_app)
+    messages_app=$(get_messages_app "$debug_port")
     save_setting messages_app "$messages_app"
-    configure_debug_port "$messages_app" "$debug_port"
     install_scripts
     install_dialer_app
     echo -n "Enter a telephone number to test the installation: "
     read response
-    xdg-open "tel:response"
-    echo "If Messages successfully dialed the number, then you're all set!"
+    if [ -n "$response" ]; then
+        if $mac; then
+            echo "macOS support is not yet implemented" 1>&2
+            exit 1
+        else
+            xdg-open "tel:$response"
+        fi
+        echo "If Messages successfully dialed the number, then you're all set!"
+    else
+        echo "OK, not testing"
+    fi
 }
 
 main
